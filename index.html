@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE CAPTAINCY BALLOT</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Space+Grotesk:wght@400;700&display=swap');
+
+        :root {
+            --bg: #fff0f5;
+            --ink: #2b0016;
+            --accent: #ff69b4;
+            --line: #ffb6c1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--ink);
+            font-family: 'Space Grotesk', sans-serif;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-image: linear-gradient(var(--line) 1px, transparent 1px);
+            background-size: 100% 3rem;
+            line-height: 3rem;
+        }
+
+        header {
+            margin-top: 1rem;
+            border-bottom: 4px dashed var(--ink);
+            padding-bottom: 2rem;
+        }
+
+        h1 {
+            font-family: 'Caveat', cursive;
+            font-size: clamp(3rem, 10vw, 7rem);
+            line-height: 1;
+            transform: rotate(-1deg);
+            display: inline-block;
+            color: var(--ink);
+            text-shadow: 2px 2px var(--accent);
+        }
+
+        .meta {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 1rem;
+        }
+
+        .timer {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            background: var(--ink);
+            color: var(--bg);
+            padding: 0 1rem;
+            display: inline-block;
+            transform: rotate(1deg);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            margin: 5rem 0;
+        }
+
+        @media (min-width: 768px) {
+            main {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: transparent;
+            border: none;
+            color: var(--ink);
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            outline: none;
+            padding: 1rem;
+        }
+
+        .label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 2px dashed var(--line);
+            padding-bottom: 0.5rem;
+        }
+
+        .name {
+            font-family: 'Caveat', cursive;
+            font-size: clamp(3.5rem, 8vw, 6rem);
+            line-height: 0.9;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .tally {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(5rem, 15vw, 11rem);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .voted .card:not(.picked) {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
+
+        .voted .picked {
+            cursor: not-allowed;
+        }
+
+        .voted .picked .name::after {
+            content: "✓ My Choice";
+            font-family: 'Caveat', cursive;
+            font-size: 2rem;
+            color: var(--accent);
+            display: block;
+            transform: rotate(-5deg);
+        }
+
+        footer {
+            border-top: 4px dashed var(--ink);
+            padding-top: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        #msg {
+            font-family: 'Caveat', cursive;
+            font-size: 2rem;
+            color: var(--accent);
+            text-transform: none;
+        }
+    </style>
+</head>
+<body id="notebook">
+
+    <header>
+        <h1>Galactic CF Captain Election</h1>
+        <div class="meta">
+            Time Left: <span class="timer" id="clock">05:00:00</span>
+        </div>
+    </header>
+
+    <main id="board">
+        <button class="card" id="m-diwash" onclick="cast('diwash')">
+            <div>
+                <div class="label">Option 01</div>
+                <div class="name">Diwash Ale Magar</div>
+            </div>
+            <div class="tally" id="t-diwash">3</div>
+        </button>
+
+        <button class="card" id="m-ayush" onclick="cast('ayush')">
+            <div>
+                <div class="label">Option 02</div>
+                <div class="name">Ayush Ranabat</div>
+            </div>
+            <div class="tally" id="t-ayush">3</div>
+        </button>
+    </main>
+
+    <footer>
+        <div>Status: <span id="msg">Pick one name. You cannot change your mind.</span></div>
+    </footer>
+
+    <script>
+        let duration = 5 * 60 * 60;
+        let points = { diwash: 3, ayush: 3 };
+
+        const view = document.getElementById('notebook');
+        const info = document.getElementById('msg');
+        const optDiwash = document.getElementById('m-diwash');
+        const optAyush = document.getElementById('m-ayush');
+
+        if (localStorage.getItem('saved_ballot')) {
+            halt(localStorage.getItem('saved_ballot'));
+        }
+
+        function render() {
+            document.getElementById('t-diwash').innerText = points.diwash;
+            document.getElementById('t-ayush').innerText = points.ayush;
+        }
+
+        function cast(pick) {
+            if (localStorage.getItem('saved_ballot')) return;
+
+            localStorage.setItem('saved_ballot', pick);
+
+            if (pick === 'diwash') {
+                points.diwash++;
+            } else {
+                points.ayush++;
+            }
+
+            render();
+            halt(pick);
+        }
+
+        function halt(pick) {
+            view.classList.add('voted');
+            optDiwash.disabled = true;
+            optAyush.disabled = true;
+
+            if (pick === 'diwash') {
+                optDiwash.classList.add('picked');
+            } else {
+                optAyush.classList.add('picked');
+            }
+
+            info.innerText = "Done NGA!";
+        }
+
+        function loop() {
+            if (duration <= 0) return;
+
+            let aGain = Math.floor(Math.random() * 2) + 1;
+            points.ayush += aGain;
+
+            let dGain = Math.floor(Math.random() * 2) + 2;
+            points.diwash += dGain;
+
+            render();
+        }
+
+        const runner = setInterval(() => {
+            duration--;
+
+            if (duration <= 0) {
+                clearInterval(runner);
+                duration = 0;
+
+                optDiwash.disabled = true;
+                optAyush.disabled = true;
+
+                points.diwash = points.ayush + 3;
+                render();
+
+                info.innerText = "Voting over! Diwash wins by exactly 3 votes.";
+            }
+
+            if (duration > 0 && duration % 300 === 0) {
+                loop();
+            }
+
+            let hr = Math.floor(duration / 3600).toString().padStart(2, '0');
+            let min = Math.floor((duration % 3600) / 60).toString().padStart(2, '0');
+            let sec = (duration % 60).toString().padStart(2, '0');
+            document.getElementById('clock').innerText = `${hr}:${min}:${sec}`;
+
+        }, 1000);
+
+        render();
+    </script>
+</body>
+</html>
+

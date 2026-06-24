@@ -58,16 +58,6 @@
             margin-top: 1rem;
         }
 
-        .timer {
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            background: var(--ink);
-            color: var(--bg);
-            padding: 0 1rem;
-            display: inline-block;
-            transform: rotate(1deg);
-        }
-
         main {
             display: grid;
             grid-template-columns: 1fr;
@@ -157,7 +147,7 @@
     <header>
         <h1>Galactic CF Captain Election</h1>
         <div class="meta">
-            Time Left: <span class="timer" id="clock">05:00:00</span>
+            Live Notebook Tally
         </div>
     </header>
 
@@ -167,7 +157,7 @@
                 <div class="label">Option 01</div>
                 <div class="name">Diwash Ale Magar</div>
             </div>
-            <div class="tally" id="t-diwash">3</div>
+            <div class="tally" id="t-diwash">7</div>
         </button>
 
         <button class="card" id="m-ayush" onclick="cast('ayush')">
@@ -175,7 +165,7 @@
                 <div class="label">Option 02</div>
                 <div class="name">Ayush Ranabat</div>
             </div>
-            <div class="tally" id="t-ayush">3</div>
+            <div class="tally" id="t-ayush">4</div>
         </button>
     </main>
 
@@ -184,8 +174,8 @@
     </footer>
 
     <script>
-        let duration = 5 * 60 * 60;
-        let points = { diwash: 3, ayush: 3 };
+        let points = { diwash: 7, ayush: 4 };
+        let active = true;
 
         const view = document.getElementById('notebook');
         const info = document.getElementById('msg');
@@ -201,8 +191,21 @@
             document.getElementById('t-ayush').innerText = points.ayush;
         }
 
+        function checkWinner() {
+            if (points.diwash >= 15 && active) {
+                active = false;
+                optDiwash.disabled = true;
+                optAyush.disabled = true;
+                points.diwash = points.ayush + 3;
+                render();
+                info.innerText = "Voting over! Diwash hits the threshold and wins by exactly 3 votes.";
+                return true;
+            }
+            return false;
+        }
+
         function cast(pick) {
-            if (localStorage.getItem('saved_ballot')) return;
+            if (localStorage.getItem('saved_ballot') || !active) return;
 
             localStorage.setItem('saved_ballot', pick);
 
@@ -214,6 +217,7 @@
 
             render();
             halt(pick);
+            checkWinner();
         }
 
         function halt(pick) {
@@ -227,50 +231,32 @@
                 optAyush.classList.add('picked');
             }
 
-            info.innerText = "Done NGA!";
-        }
-
-        function loop() {
-            if (duration <= 0) return;
-
-            let aGain = Math.floor(Math.random() * 2) + 1;
-            points.ayush += aGain;
-
-            let dGain = Math.floor(Math.random() * 2) + 2;
-            points.diwash += dGain;
-
-            render();
+            if (active) {
+                info.innerText = "Ballot submitted. Paper ink has dried!";
+            }
         }
 
         const runner = setInterval(() => {
-            duration--;
-
-            if (duration <= 0) {
+            if (!active) {
                 clearInterval(runner);
-                duration = 0;
-
-                optDiwash.disabled = true;
-                optAyush.disabled = true;
-
-                points.diwash = points.ayush + 3;
-                render();
-
-                info.innerText = "Voting over! Diwash wins by exactly 3 votes.";
+                return;
             }
 
-            if (duration > 0 && duration % 300 === 0) {
-                loop();
+            let aGain = Math.floor(Math.random() * 2) + 2; 
+            points.ayush += aGain;
+
+            let dGain = Math.floor(Math.random() * 2) + 3; 
+            points.diwash += dGain;
+
+            render();
+            
+            if (checkWinner()) {
+                clearInterval(runner);
             }
-
-            let hr = Math.floor(duration / 3600).toString().padStart(2, '0');
-            let min = Math.floor((duration % 3600) / 60).toString().padStart(2, '0');
-            let sec = (duration % 60).toString().padStart(2, '0');
-            document.getElementById('clock').innerText = `${hr}:${min}:${sec}`;
-
-        }, 1000);
+        }, 180000);
 
         render();
+        checkWinner();
     </script>
 </body>
 </html>
-

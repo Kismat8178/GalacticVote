@@ -76,12 +76,17 @@
             border: none;
             color: var(--ink);
             text-align: left;
-            cursor: pointer;
+            cursor: not-allowed;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             outline: none;
             padding: 1rem;
+            opacity: 0.5;
+        }
+
+        .card.winner-card {
+            opacity: 1;
         }
 
         .label {
@@ -101,29 +106,20 @@
             margin-bottom: 2rem;
         }
 
-        .tally {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(5rem, 15vw, 11rem);
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .voted .card:not(.picked) {
-            opacity: 0.2;
-            cursor: not-allowed;
-        }
-
-        .voted .picked {
-            cursor: not-allowed;
-        }
-
-        .voted .picked .name::after {
-            content: "✓ My Choice";
+        .winner-card .name::after {
+            content: "✓ Winner";
             font-family: 'Caveat', cursive;
             font-size: 2rem;
             color: var(--accent);
             display: block;
             transform: rotate(-5deg);
+        }
+
+        .tally {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(5rem, 15vw, 11rem);
+            font-weight: 700;
+            line-height: 1;
         }
 
         footer {
@@ -147,116 +143,31 @@
     <header>
         <h1>Galactic CF Captain Election</h1>
         <div class="meta">
-            Live Notebook Tally
+            Final Closed Tally
         </div>
     </header>
 
     <main id="board">
-        <button class="card" id="m-diwash" onclick="cast('diwash')">
+        <button class="card winner-card" id="m-diwash" disabled>
             <div>
                 <div class="label">Option 01</div>
                 <div class="name">Diwash Ale Magar</div>
             </div>
-            <div class="tally" id="t-diwash">8</div>
+            <div class="tally" id="t-diwash">4</div>
         </button>
 
-        <button class="card" id="m-ayush" onclick="cast('ayush')">
+        <button class="card" id="m-ayush" disabled>
             <div>
                 <div class="label">Option 02</div>
                 <div class="name">Ayush Ranabat</div>
             </div>
-            <div class="tally" id="t-ayush">7</div>
+            <div class="tally" id="t-ayush">3</div>
         </button>
     </main>
 
     <footer>
-        <div>Status: <span id="msg">Pick one name. You cannot change your mind.</span></div>
+        <div>Status: <span id="msg">Voting over! Diwash wins by exactly 3 votes.</span></div>
     </footer>
 
-    <script>
-        let points = { diwash: 8, ayush: 7 };
-        let active = true;
-
-        const view = document.getElementById('notebook');
-        const info = document.getElementById('msg');
-        const optDiwash = document.getElementById('m-diwash');
-        const optAyush = document.getElementById('m-ayush');
-
-        if (localStorage.getItem('saved_ballot')) {
-            halt(localStorage.getItem('saved_ballot'));
-        }
-
-        function render() {
-            document.getElementById('t-diwash').innerText = points.diwash;
-            document.getElementById('t-ayush').innerText = points.ayush;
-        }
-
-        function checkWinner() {
-            if (points.diwash >= 15 && active) {
-                active = false;
-                optDiwash.disabled = true;
-                optAyush.disabled = true;
-                points.diwash = points.ayush + 3;
-                render();
-                info.innerText = "Voting over! Diwash hits the threshold and wins by exactly 3 votes.";
-                return true;
-            }
-            return false;
-        }
-
-        function cast(pick) {
-            if (localStorage.getItem('saved_ballot') || !active) return;
-
-            localStorage.setItem('saved_ballot', pick);
-
-            if (pick === 'diwash') {
-                points.diwash++;
-            } else {
-                points.ayush++;
-            }
-
-            render();
-            halt(pick);
-            checkWinner();
-        }
-
-        function halt(pick) {
-            view.classList.add('voted');
-            optDiwash.disabled = true;
-            optAyush.disabled = true;
-
-            if (pick === 'diwash') {
-                optDiwash.classList.add('picked');
-            } else {
-                optAyush.classList.add('picked');
-            }
-
-            if (active) {
-                info.innerText = "Ballot submitted. Paper ink has dried!";
-            }
-        }
-
-        const runner = setInterval(() => {
-            if (!active) {
-                clearInterval(runner);
-                return;
-            }
-
-            let aGain = Math.floor(Math.random() * 2) + 2; 
-            points.ayush += aGain;
-
-            let dGain = Math.floor(Math.random() * 2) + 3; 
-            points.diwash += dGain;
-
-            render();
-            
-            if (checkWinner()) {
-                clearInterval(runner);
-            }
-        }, 180000);
-
-        render();
-        checkWinner();
-    </script>
 </body>
 </html>
